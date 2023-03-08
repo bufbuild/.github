@@ -10,6 +10,7 @@
 - [connect-es](https://github.com/bufbuild/connect-es)
 - [connect-kotlin](https://github.com/bufbuild/connect-kotlin)
 - [connect-swift](https://github.com/bufbuild/connect-swift)
+- [connect-query](https://github.com/bufbuild/connect-query)
 - [connect-grpcreflect-go](https://github.com/bufbuild/connect-grpcreflect-go)
 - [connect-grpchealth-go](https://github.com/bufbuild/connect-grpchealth-go)
 - [connect-opentelemetry-go](https://github.com/bufbuild/connect-opentelemetry-go)
@@ -26,4 +27,3 @@
 - [protoc-gen-validate](https://github.com/bufbuild/protoc-gen-validate)
 - [protobuf-conformance](https://github.com/bufbuild/protobuf-conformance)
 - [buf-examples](https://github.com/bufbuild/buf-examples)
-
