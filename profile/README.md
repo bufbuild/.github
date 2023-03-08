@@ -1,13 +1,8 @@
-# Buf
-
-Welcome to Buf's Github page!
-
-
 ## Links to check out
 
-- [buf.build](https://buf.build/)
-- [docs.buf.build](https://docs.buf.build/)
-- [connect.build](https://connect.build/)
+- [buf.build](https://buf.build/) - Our homepage
+- [docs.buf.build](https://docs.buf.build/) - Documentation for the Buf CLI and BSR
+- [connect.build](https://connect.build/) - Connect's homepage
 
 ## Connect Repositories
 
