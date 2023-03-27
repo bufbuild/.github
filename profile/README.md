@@ -1,23 +1,20 @@
-# :wave: Welcome to Buf!
-
-> A better way to build APIs
-
 ## New to Buf?
 
-- How to [Install the Buf CLI](https://docs.buf.build/installation)
-- Getting Started with the [Buf CLI](https://docs.buf.build/tutorials/getting-started-with-buf-cli) and [Buf Schema Registry](https://docs.buf.build/tutorials/getting-started-with-bsr)
-- Feeling social? [Join us on Slack](https://github.com/bufbuild/buf)
+- [Install the Buf CLI](https://buf.build/docs/installation)
+- [Getting started with the Buf CLI](https://buf.build/docs/tutorials/getting-started-with-buf-cli)
+- [Getting started with the BSR](https://docs.buf.build/tutorials/getting-started-with-bsr)
+- [Join us on Slack](https://github.com/bufbuild/buf)
 
 ## Links to check out
 
 - [buf.build](https://buf.build/) - Our homepage
-- [docs.buf.build](https://docs.buf.build/) - Documentation for the Buf CLI and BSR
+- [buf.build/docs](https://buf.build/docs) - Documentation for the Buf CLI and BSR
 - [connect.build](https://connect.build/) - Connect's homepage
-- [bufstatus.com](https://www.bufstatus.com/) - Service interuptions
+- [bufstatus.com](https://www.bufstatus.com/) - Service monitoring
 
 ## Repositories
 
-### Connect 
+### Connect
 
 - [connect-go](https://github.com/bufbuild/connect-go)
 - [connect-es](https://github.com/bufbuild/connect-es)
