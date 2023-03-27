@@ -1,4 +1,4 @@
-## New to Buf?
+## Getting started
 
 - [Install the Buf CLI](https://buf.build/docs/installation)
 - [Getting started with the Buf CLI](https://buf.build/docs/tutorials/getting-started-with-buf-cli)
