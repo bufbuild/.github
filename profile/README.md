@@ -28,12 +28,17 @@
 - [connect-crosstest](https://github.com/bufbuild/connect-crosstest)
 - [connect-es-integration](https://github.com/bufbuild/connect-es-integration)
 
+### Protovalidate
+
+- [protovalidate](https://github.com/bufbuild/protovalidate)
+- [protovalidate-go](https://github.com/bufbuild/protovalidate-go)
+- [protoc-gen-validate (legacy)](https://github.com/bufbuild/protoc-gen-validate)
+
 ### General Repos
 
 - [buf](https://github.com/bufbuild/buf)
 - [protobuf-es](https://github.com/bufbuild/protobuf-es)
 - [protocompile](https://github.com/bufbuild/protocompile)
 - [prototransform](https://github.com/bufbuild/prototransform)
-- [protoc-gen-validate](https://github.com/bufbuild/protoc-gen-validate)
 - [protobuf-conformance](https://github.com/bufbuild/protobuf-conformance)
 - [buf-examples](https://github.com/bufbuild/buf-examples)
