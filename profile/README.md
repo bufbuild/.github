@@ -42,3 +42,8 @@
 - [prototransform](https://github.com/bufbuild/prototransform)
 - [protobuf-conformance](https://github.com/bufbuild/protobuf-conformance)
 - [buf-examples](https://github.com/bufbuild/buf-examples)
+
+## Protobuf third-party curated content available in the BSR
+
+- [modules](https://github.com/bufbuild/modules)
+- [plugins](https://github.com/bufbuild/plugins)
