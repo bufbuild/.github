@@ -32,7 +32,7 @@
 
 - [protovalidate](https://github.com/bufbuild/protovalidate)
 - [protovalidate-go](https://github.com/bufbuild/protovalidate-go)
-- [protoc-gen-validate (legacy)](https://github.com/bufbuild/protoc-gen-validate)
+- [protovalidate-cc](https://github.com/bufbuild/protovalidate-cc)
 
 ### General Repos
 
