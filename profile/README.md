@@ -32,6 +32,7 @@
 
 - [protovalidate](https://github.com/bufbuild/protovalidate)
 - [protovalidate-go](https://github.com/bufbuild/protovalidate-go)
+- [protovalidate-java](https://github.com/bufbuild/protovalidate-java)
 - [protovalidate-python](https://github.com/bufbuild/protovalidate-python)
 - [protovalidate-cc](https://github.com/bufbuild/protovalidate-cc)
 
