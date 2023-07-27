@@ -16,15 +16,15 @@
 
 ### Connect
 
-- [connect-go](https://github.com/bufbuild/connect-go)
+- [connect-go](https://github.com/connectrpc/connect-go)
 - [connect-es](https://github.com/bufbuild/connect-es)
 - [connect-kotlin](https://github.com/bufbuild/connect-kotlin)
 - [connect-swift](https://github.com/bufbuild/connect-swift)
 - [connect-query](https://github.com/bufbuild/connect-query)
-- [connect-grpcreflect-go](https://github.com/bufbuild/connect-grpcreflect-go)
-- [connect-grpchealth-go](https://github.com/bufbuild/connect-grpchealth-go)
-- [connect-opentelemetry-go](https://github.com/bufbuild/connect-opentelemetry-go)
-- [connect-demo](https://github.com/bufbuild/connect-demo)
+- [connect-grpcreflect-go](https://github.com/connectrpc/grpcreflect-go)
+- [connect-grpchealth-go](https://github.com/connectrpc/grpchealth-go)
+- [otelconnect-go](https://github.com/connectrpc/otelconnect-go)
+- [examples-go](https://github.com/connectrpc/examples-go)
 - [connect-crosstest](https://github.com/bufbuild/connect-crosstest)
 - [connect-es-integration](https://github.com/bufbuild/connect-es-integration)
 
