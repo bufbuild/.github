@@ -9,7 +9,7 @@
 
 - [buf.build](https://buf.build/) - Our homepage
 - [buf.build/docs](https://buf.build/docs) - Documentation for the Buf CLI and BSR
-- [connect.build](https://connect.build/) - Connect's homepage
+- [connect.build](https://connectrpc.com) - Connect's homepage
 - [bufstatus.com](https://www.bufstatus.com/) - Service monitoring
 
 ## Repositories
