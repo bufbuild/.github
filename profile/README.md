@@ -3,7 +3,7 @@
 - [Install the Buf CLI](https://buf.build/docs/installation)
 - [Getting started with the Buf CLI](https://buf.build/docs/tutorials/getting-started-with-buf-cli)
 - [Getting started with the BSR](https://docs.buf.build/tutorials/getting-started-with-bsr)
-- [Join us on Slack](https://github.com/bufbuild/buf)
+- [Join us on Slack](https://buf.build/links/slack)
 
 ## Links to check out
 
