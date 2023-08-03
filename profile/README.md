@@ -16,7 +16,8 @@
 
 ### Connect
 
-Connect repositories are in the process of migrating to [github.com/connectrpc](https://github.com/connectrpc). We'll keep this page updated with the links to each repo as the move is completed!
+Connect repositories are in the process of migrating to [github.com/connectrpc](https://github.com/connectrpc).
+We'll keep this page updated with the links to each repo as the move is completed!
 
 - [connect-go](https://github.com/connectrpc/connect-go)
 - [connect-es](https://github.com/bufbuild/connect-es)
@@ -32,7 +33,9 @@ Connect repositories are in the process of migrating to [github.com/connectrpc](
 
 ### Protovalidate
 
-Protovalidate is protoc-gen-validate's successor, and is now in beta across Go, Java, Python, and C++! Typescript is coming soon.
+Protovalidate is protoc-gen-validate's successor.
+Protovalidate is in beta across Go, Java, Python, and C++!
+Typescript is coming soon.
 
 - [protovalidate](https://github.com/bufbuild/protovalidate)
 - [protovalidate-go](https://github.com/bufbuild/protovalidate-go)
