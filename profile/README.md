@@ -29,8 +29,8 @@ We'll keep this page updated with the links to each repo as the move is complete
 - [grpchealth-go](https://github.com/connectrpc/grpchealth-go)
 - [otelconnect-go](https://github.com/connectrpc/otelconnect-go)
 - [examples-go](https://github.com/connectrpc/examples-go)
+- [examples-es](https://github.com/connectrpc/examples-es)
 - [connect-crosstest](https://github.com/bufbuild/connect-crosstest)
-- [connect-es-integration](https://github.com/bufbuild/connect-es-integration)
 
 ### Protovalidate
 
