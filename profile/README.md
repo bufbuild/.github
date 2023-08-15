@@ -21,10 +21,10 @@ Connect repositories are in the process of migrating to [github.com/connectrpc](
 We'll keep this page updated with the links to each repo as the move is completed!
 
 - [connect-go](https://github.com/connectrpc/connect-go)
-- [connect-es](https://github.com/bufbuild/connect-es)
+- [connect-es](https://github.com/connectrpc/connect-es)
 - [connect-kotlin](https://github.com/bufbuild/connect-kotlin)
 - [connect-swift](https://github.com/bufbuild/connect-swift)
-- [connect-query](https://github.com/bufbuild/connect-query)
+- [connect-query-es](https://github.com/connectrpc/connect-query-es)
 - [grpcreflect-go](https://github.com/connectrpc/grpcreflect-go)
 - [grpchealth-go](https://github.com/connectrpc/grpchealth-go)
 - [otelconnect-go](https://github.com/connectrpc/otelconnect-go)
