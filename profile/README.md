@@ -30,7 +30,7 @@ We'll keep this page updated with the links to each repo as the move is complete
 - [otelconnect-go](https://github.com/connectrpc/otelconnect-go)
 - [examples-go](https://github.com/connectrpc/examples-go)
 - [examples-es](https://github.com/connectrpc/examples-es)
-- [connect-crosstest](https://github.com/bufbuild/connect-crosstest)
+- [connect-conformance](https://github.com/connectrpc/conformance)
 
 ### Protovalidate
 
