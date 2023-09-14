@@ -22,7 +22,7 @@ We'll keep this page updated with the links to each repo as the move is complete
 
 - [connect-go](https://github.com/connectrpc/connect-go)
 - [connect-es](https://github.com/connectrpc/connect-es)
-- [connect-kotlin](https://github.com/bufbuild/connect-kotlin)
+- [connect-kotlin](https://github.com/connectrpc/connect-kotlin)
 - [connect-swift](https://github.com/connectrpc/connect-swift)
 - [connect-query-es](https://github.com/connectrpc/connect-query-es)
 - [grpcreflect-go](https://github.com/connectrpc/grpcreflect-go)
