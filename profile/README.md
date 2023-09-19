@@ -16,9 +16,7 @@
 
 ### Connect
 
-Connect repositories are in the process of migrating to [github.com/connectrpc](https://github.com/connectrpc).
-
-We'll keep this page updated with the links to each repo as the move is completed!
+We've applied to donate Connect to the [Cloud Native Computing Foundation](https://cncf.io/). Connect repositories have migrated to [github.com/connectrpc](https://github.com/connectrpc).
 
 - [connect-go](https://github.com/connectrpc/connect-go)
 - [connect-es](https://github.com/connectrpc/connect-es)
