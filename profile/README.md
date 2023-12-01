@@ -45,6 +45,7 @@ Protovalidate is in beta across Go, Java, Python, and C++!
 ### General Repos
 
 - [buf](https://github.com/bufbuild/buf) - The Buf CLI tool
+- [bufisk](https://github.com/bufbuild/bufisk) - [Bazelisk](https://github.com/bazelbuild/bazelisk) for Buf. Download and verify released Buf CLI versions transparently.
 - [protobuf-es](https://github.com/bufbuild/protobuf-es) - Protobuf for ECMAScript
 - [protocompile](https://github.com/bufbuild/protocompile) - The compiler that powers `buf`
 - [protoyaml-go](https://github.com/bufbuild/protoyaml-go) -  Marshal and unmarshal Protobuf as YAML with rich error messages
