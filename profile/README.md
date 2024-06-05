@@ -16,7 +16,7 @@
 
 ### Connect
 
-We've applied to donate Connect to the [Cloud Native Computing Foundation](https://cncf.io/). Connect repositories have migrated to [github.com/connectrpc](https://github.com/connectrpc).
+We've donated Connect to the [Cloud Native Computing Foundation](https://cncf.io/). Connect repositories have migrated to [github.com/connectrpc](https://github.com/connectrpc).
 
 - [connect-go](https://github.com/connectrpc/connect-go)
 - [connect-es](https://github.com/connectrpc/connect-es)
