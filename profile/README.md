@@ -16,7 +16,7 @@
 
 ### Connect
 
-We've applied to donate Connect to the [Cloud Native Computing Foundation](https://cncf.io/). Connect repositories have migrated to [github.com/connectrpc](https://github.com/connectrpc).
+Connect has joined the [CNCF](https://cncf.io/). Connect repositories have migrated to [github.com/connectrpc](https://github.com/connectrpc).
 
 - [connect-go](https://github.com/connectrpc/connect-go)
 - [connect-es](https://github.com/connectrpc/connect-es)
@@ -41,6 +41,13 @@ Protovalidate is in beta across Go, Java, Python, and C++!
 - [protovalidate-java](https://github.com/bufbuild/protovalidate-java)
 - [protovalidate-python](https://github.com/bufbuild/protovalidate-python)
 - [protovalidate-cc](https://github.com/bufbuild/protovalidate-cc)
+
+### PluginRPC
+
+PluginRPC is a Protobuf RPC framework for plugins.
+
+- [pluginrpc](https://github.com/pluginrpc/pluginrpc)
+- [pluginrpc-go](https://github.com/pluginrpc/pluginrpc-go)
 
 ### General Repos
 
