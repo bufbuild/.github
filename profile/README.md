@@ -34,12 +34,13 @@ Connect has joined the [CNCF](https://cncf.io/). Connect repositories have migra
 
 Protovalidate is protoc-gen-validate's successor.
 
-Protovalidate is in beta across Go, Java, Python, and C++!
+Protovalidate is in beta across Go, Java, Python, TypeScript/JavaScript, and C++!
 
 - [protovalidate](https://github.com/bufbuild/protovalidate)
 - [protovalidate-go](https://github.com/bufbuild/protovalidate-go)
 - [protovalidate-java](https://github.com/bufbuild/protovalidate-java)
 - [protovalidate-python](https://github.com/bufbuild/protovalidate-python)
+- [protovalidate-es](https://github.com/bufbuild/protovalidate-es)
 - [protovalidate-cc](https://github.com/bufbuild/protovalidate-cc)
 
 ### PluginRPC
