@@ -22,6 +22,7 @@ Connect has joined the [CNCF](https://cncf.io/). Connect repositories have migra
 - [connect-es](https://github.com/connectrpc/connect-es)
 - [connect-kotlin](https://github.com/connectrpc/connect-kotlin)
 - [connect-swift](https://github.com/connectrpc/connect-swift)
+- [connect-python](https://github.com/connectrpc/connect-python)
 - [connect-query-es](https://github.com/connectrpc/connect-query-es)
 - [grpcreflect-go](https://github.com/connectrpc/grpcreflect-go)
 - [grpchealth-go](https://github.com/connectrpc/grpchealth-go)
