@@ -10,6 +10,7 @@
 - [buf.build](https://buf.build/) - Our homepage
 - [buf.build/docs](https://buf.build/docs) - Documentation for the Buf CLI and BSR
 - [connectrpc.com](https://connectrpc.com/) - Connect's homepage
+- [protovalidate.com](https://protovalidate.com/) - Protovalidate's homepage
 - [bufstatus.com](https://www.bufstatus.com/) - Service monitoring
 
 ## Repositories
@@ -33,9 +34,7 @@ Connect has joined the [CNCF](https://cncf.io/). Connect repositories have migra
 
 ### Protovalidate
 
-Protovalidate is protoc-gen-validate's successor.
-
-Protovalidate is in beta across Go, TypeScript/JavaScript, Java, Python, and C++!
+[Protovalidate](https://protovalidate.com/) is protoc-gen-validate's successor.
 
 - [protovalidate](https://github.com/bufbuild/protovalidate)
 - [protovalidate-go](https://github.com/bufbuild/protovalidate-go)
