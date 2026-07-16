@@ -1,0 +1,174 @@
+# Reusable NIGHTLY sweep: merges open Dependabot PRs that the reactive
+# dependabot-automerge workflow has already marked eligible.
+#
+# Division of labor: the reactive workflow runs per pull_request event,
+# where dependabot/fetch-metadata gives a precise classification (semver
+# level, grouped-update members, security alert state). It records its
+# verdict by labeling eligible PRs (eligibility-label). This sweep runs on
+# a schedule — where fetch-metadata cannot run — and merges open Dependabot
+# PRs bearing that label. Policy lives in ONE place (the reactive
+# workflow); the sweep never classifies anything.
+#
+# No runner time is ever spent waiting on CI. The sweep takes a single
+# look at each PR's checks: all green -> merge now; pending or failing ->
+# skip with a notice, and the next scheduled run retries. By sweep time
+# CI has normally been finished for hours, so merges are immediate.
+#
+# A PR with no checks at all (beyond the labeler's own run) also merges:
+# a repository without CI already accepts every change unverified, so
+# blocking Dependabot there only stacks up PRs. The label already vetted
+# the update level, and the merge is announced with a notice so it stays
+# visible.
+#
+# This also gives humans a veto: remove the label from a PR and the sweep
+# skips it. The reactive workflow re-evaluates (and re-labels or unlabels)
+# on every Dependabot push.
+name: dependabot-automerge-sweep
+on:
+  workflow_call:
+    inputs:
+      merge-method:
+        description: "Merge method: merge, squash, or rebase."
+        type: string
+        required: false
+        default: squash
+      eligibility-label:
+        description: >-
+          Label that marks a PR as approved for auto-merge. Applied by the
+          reactive dependabot-automerge workflow when its policy passes.
+          Must match that workflow's eligibility-label.
+        type: string
+        required: false
+        default: "automerge: eligible"
+      automerge-workflow:
+        description: >-
+          Name of the reactive auto-merge workflow in this repository. Its
+          check runs are excluded so pending/failing decisions reflect the
+          repository's real CI, not the labeler itself — and so merges on
+          CI-less repositories are correctly announced as such. Must match
+          the caller stub's `name:` of the reactive workflow.
+        type: string
+        required: false
+        default: dependabot-automerge
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    # Only run on a schedule or a manual dispatch. A pull_request event is
+    # the reactive workflow's job, not this one.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Validate Inputs
+        env:
+          MERGE_METHOD: ${{ inputs.merge-method }}
+          ELIGIBILITY_LABEL: ${{ inputs.eligibility-label }}
+          AUTOMERGE_WORKFLOW: ${{ inputs.automerge-workflow }}
+        run: |
+          case "${MERGE_METHOD}" in
+            merge|squash|rebase) ;;
+            *) echo "invalid merge-method: ${MERGE_METHOD}" >&2; exit 1 ;;
+          esac
+          if [ -z "${ELIGIBILITY_LABEL}" ]; then
+            echo "eligibility-label must not be empty" >&2
+            exit 1
+          fi
+          if [ -z "${AUTOMERGE_WORKFLOW}" ]; then
+            echo "automerge-workflow must not be empty" >&2
+            exit 1
+          fi
+      - name: Merge Labeled Dependabot PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          MERGE_METHOD: ${{ inputs.merge-method }}
+          ELIGIBILITY_LABEL: ${{ inputs.eligibility-label }}
+          AUTOMERGE_WORKFLOW: ${{ inputs.automerge-workflow }}
+          SELF_WORKFLOW: ${{ github.workflow }}
+        run: |
+          # Single-shot merge decision for one PR. Returns 0 merged,
+          # 2 skipped (retry next run), 1 error. Called in a tested
+          # context, which suppresses errexit inside the function body —
+          # so every command that must stop the flow carries an explicit
+          # return.
+          merge_pr() {
+            local url="$1" checks others total failed pending rc
+            # `--json` reports current state without waiting. Exit 8 means
+            # "checks pending" and still prints the JSON — keep it, so
+            # pending reads as pending rather than as "no checks". Any
+            # other failure (including "no checks reported") counts as no
+            # checks, which is a skip.
+            rc=0
+            checks=$(gh pr checks "${url}" --json name,state,bucket,workflow) || rc=$?
+            if [ "${rc}" -ne 0 ] && [ "${rc}" -ne 8 ]; then
+              checks="[]"
+            fi
+            # Exclude the automerge workflows' own check runs; everything
+            # else is the CI actually gating this PR.
+            others=$(echo "${checks}" | jq \
+              --arg labeler "${AUTOMERGE_WORKFLOW}" --arg self "${SELF_WORKFLOW}" \
+              '[.[] | select(.workflow != $labeler and .workflow != $self)]') \
+              || return 1
+            total=$(echo "${others}" | jq 'length') || return 1
+            if [ "${total}" -eq 0 ]; then
+              # A repository without CI already accepts every change
+              # unverified. The label vetted the update level, so merge
+              # rather than let Dependabot PRs stack up unmergeable.
+              echo "::notice title=Sweep merging without CI::${url} - repository has no checks beyond the labeler"
+            else
+              failed=$(echo "${others}" | jq \
+                '[.[] | select(.bucket == "fail" or .bucket == "cancel")] | length') \
+                || return 1
+              if [ "${failed}" -gt 0 ]; then
+                echo "::notice title=Sweep skipped::${url} - checks failing; will retry next run"
+                return 2
+              fi
+              pending=$(echo "${others}" | jq \
+                '[.[] | select(.bucket == "pending")] | length') || return 1
+              if [ "${pending}" -gt 0 ]; then
+                echo "::notice title=Sweep skipped::${url} - ${pending} check(s) still running; will retry next run"
+                return 2
+              fi
+            fi
+            gh pr review --approve "${url}" || return 1
+            gh pr merge "--${MERGE_METHOD}" "${url}" || return 1
+          }
+
+          # Only PRs that are BOTH authored by Dependabot AND carry the
+          # eligibility label applied by the reactive workflow. The sweep
+          # never classifies PRs itself.
+          # Explicit --limit: gh defaults to 30, which would silently drop
+          # PRs on a busy repo. 100 is far beyond any realistic count of
+          # open, labeled Dependabot PRs; log loudly if we ever hit it.
+          prs=$(gh pr list --repo "${REPO}" --author 'app/dependabot' \
+            --label "${ELIGIBILITY_LABEL}" --state open --limit 100 \
+            --json number,url)
+          count=$(echo "${prs}" | jq 'length')
+          echo "found ${count} eligible Dependabot PR(s)"
+          if [ "${count}" -eq 100 ]; then
+            echo "::warning title=Sweep at limit::100 eligible PRs fetched; more may exist and will be picked up next run"
+          fi
+
+          merged=0 skipped=0 errors=0
+          while read -r pr; do
+            [ -n "${pr}" ] || continue
+            number=$(echo "${pr}" | jq -r '.number')
+            url=$(echo "${pr}" | jq -r '.url')
+            rc=0
+            merge_pr "${url}" || rc=$?
+            case "${rc}" in
+              0) echo "merged #${number}: ${url}"; merged=$((merged + 1)) ;;
+              2) skipped=$((skipped + 1)) ;;
+              *)
+                echo "::warning title=Sweep merge failed::#${number} ${url}"
+                errors=$((errors + 1))
+                ;;
+            esac
+          done < <(echo "${prs}" | jq -c '.[]')
+
+          echo "merged=${merged} skipped=${skipped} errors=${errors}"
+          if [ "${errors}" -gt 0 ]; then
+            echo "${errors} PR(s) hit errors; see warnings" >&2
+            exit 1
+          fi

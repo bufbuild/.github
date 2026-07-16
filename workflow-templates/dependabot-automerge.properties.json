@@ -1,0 +1,5 @@
+{
+  "name": "Dependabot Auto-Merge",
+  "description": "Auto-merge Dependabot PRs that fix a security alert or bump a patch/minor version. Merges via GitHub native auto-merge on repos with required checks, or labels PRs for the nightly sweep (defer-to-sweep) on repos without.",
+  "categories": ["Automation"]
+}
