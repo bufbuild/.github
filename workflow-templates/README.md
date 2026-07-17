@@ -5,11 +5,10 @@ Starter workflows for bufbuild repositories, available from the repository
 
 ## dependabot-automerge
 
-Enables GitHub native auto-merge on Dependabot PRs that match a confidence
-policy, then lets GitHub merge once all required status checks pass. By
-default it auto-merges PRs that fix a Dependabot security alert (when an
-alert-lookup token is configured) and routine patch/minor version bumps.
-Major updates always wait for a human.
+Auto-merges Dependabot PRs that match a confidence policy: routine
+patch/minor version bumps. Major updates always wait for a human; adding
+the eligibility label by hand is the deliberate override. Merges are
+always squash, per org git standards.
 
 This follows GitHub's documented approach for auto-approving and
 auto-merging Dependabot PRs: [Automating Dependabot with GitHub
@@ -50,9 +49,9 @@ writes the workflow file. Complete the prerequisites below by hand.
 **Repository with no CI at all:** both strategies still merge — such a
 repository already accepts every change unverified, and letting
 Dependabot PRs stack up unmergeable helps nobody. Strategy A merges
-eligible PRs immediately; strategy B merges them on the nightly sweep,
-announced with a notice. The eligibility policy (patch/minor only,
-majors wait for a human) still applies either way.
+eligible PRs immediately; strategy B merges them on the nightly sweep.
+The eligibility policy (patch/minor only, majors wait for a human) still
+applies either way.
 
 #### Prerequisites for strategy A — order matters
 
@@ -81,19 +80,9 @@ The reusable workflow accepts:
 
 | Input | Default | Meaning |
 |-------|---------|---------|
-| `merge-method` | `squash` | `merge`, `squash`, or `rebase`. |
-| `target` | `minor` | Highest non-security semver update type to auto-merge (`patch` or `minor`). |
-| `security-only` | `false` | Only auto-merge PRs that fix a security alert. Requires `alert-lookup-token`. |
+| `target` | `minor` | Highest semver update type to auto-merge (`patch` or `minor`). |
 | `defer-to-sweep` | `false` | Strategy B: label eligible PRs instead of merging, and let the nightly sweep merge them once CI has finished. Requires the sweep workflow. |
 | `eligibility-label` | `automerge: eligible` | Label recorded on PRs that pass the merge policy (removed again if re-evaluation declines). The nightly sweep merges by this label. |
-
-Secret `alert-lookup-token` (optional): a token that can read Dependabot
-alerts (fine-grained PAT or GitHub App installation token). The default
-`GITHUB_TOKEN` cannot read alerts, so without this secret the workflow
-gates purely on semver level. Because Dependabot-triggered workflows read
-from the **Dependabot** secret store, add it under
-Settings → Secrets and variables → **Dependabot** (repo or org), not under
-Actions.
 
 ### Caveats
 
@@ -121,21 +110,16 @@ Actions.
   still merge once checks pass — enable "dismiss stale approvals" in
   repos that require approvals if human pushes must force a fresh review,
   or disable auto-merge on the PR before pushing.
-- Consider enabling Dependabot [grouped security
-  updates](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/configure-security-updates#grouping-dependabot-security-updates-into-a-single-pull-request)
-  at the org level so a multi-CVE disclosure produces one PR per manifest
-  instead of many.
 
 ## dependabot-automerge-sweep
 
 A **scheduled** counterpart to `dependabot-automerge`. The two split the
 job: the reactive workflow classifies each Dependabot PR precisely at
 `pull_request` time (when `dependabot/fetch-metadata` works — semver
-level, grouped-update members, security alert state) and **labels**
-eligible PRs with `automerge: eligible`. The sweep runs on a cron (and on
-manual dispatch), finds open Dependabot PRs carrying that label, and
-merges them. Policy lives in exactly one place; the sweep never
-classifies anything.
+level, grouped-update members) and **labels** eligible PRs with
+`automerge: eligible`. The sweep runs on a cron (and on manual dispatch),
+finds open Dependabot PRs carrying that label, and merges them. Policy
+lives in exactly one place; the sweep never classifies anything.
 
 **The sweep does nothing alone.** Without the reactive
 `dependabot-automerge` workflow also installed, no PR is ever labeled and
@@ -147,9 +131,9 @@ run never armed the merge.
 **No runner time is spent waiting on CI.** The sweep takes a single look
 at each labeled PR: checks all green → merge immediately; anything
 pending or failing → skip, retried on the next scheduled run; no CI
-checks at all → merge as-is, announced with a notice (a repository
-without CI already accepts every change unverified). By sweep time CI
-has normally been finished for hours, so merges are instantaneous.
+checks at all → merge as-is (a repository without CI already accepts
+every change unverified). By sweep time CI has normally been finished
+for hours, so merges are instantaneous.
 
 ### Why a label handoff
 
@@ -181,16 +165,11 @@ Two caveats:
 
 ### Sweep options
 
-The sweep accepts `merge-method`, `eligibility-label` (must match the
-reactive workflow's), and `automerge-workflow` — the reactive workflow's
-name, whose check runs are ignored so pending/failing decisions reflect
-the repository's real CI rather than the labeler itself, and so merges
-on CI-less repositories are announced as such. It needs no alert-lookup
-token: security classification already happened in the reactive run.
+The sweep accepts one input: `eligibility-label`, which must match the
+reactive workflow's.
 
 The cron schedule lives in the starter template (`schedule:`), fires only
 on the **default branch**, and is suppressed after 60 days of repository
 inactivity. `workflow_dispatch` lets you run it by hand from the Actions
-tab. Skipped PRs (checks pending or failing) are reported as notices and
-retried next run; a `gh` error merging a PR is reported as a warning and
-fails the run so it is visible.
+tab. Skipped or failed PRs are logged in the run and retried on the next
+scheduled pass.

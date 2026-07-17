@@ -1,6 +1,7 @@
 # Reusable workflow that enables GitHub native auto-merge on Dependabot PRs
-# matching a confidence policy: PRs fixing a Dependabot security alert, plus
-# routine patch/minor version bumps. Major updates always wait for a human.
+# matching a confidence policy: routine patch/minor version bumps. Major
+# updates always wait for a human; adding the eligibility label by hand is
+# the deliberate override. Merges are always squash, per org git standards.
 #
 # Two merge strategies, selected by defer-to-sweep:
 #   false (default): GitHub native auto-merge (`gh pr merge --auto`). Free,
@@ -10,8 +11,6 @@
 #   true: no merge here at all. Eligible PRs are only labeled; the
 #     scheduled dependabot-automerge-sweep workflow merges them once CI
 #     has finished. Use on repositories with no required status checks.
-#     Nothing ever sits on a runner waiting for CI: this run exits in
-#     seconds, and by the time the sweep fires the checks are terminal.
 # Eligible PRs are always labeled (eligibility-label) so the sweep can
 # merge them without re-deriving the classification, which is impossible
 # at schedule time. See workflow-templates/README.md for adoption
@@ -20,15 +19,9 @@ name: dependabot-automerge
 on:
   workflow_call:
     inputs:
-      merge-method:
-        description: "Merge method: merge, squash, or rebase."
-        type: string
-        required: false
-        default: squash
       target:
         description: >-
-          Highest non-security semver update type to auto-merge: patch or
-          minor.
+          Highest semver update type to auto-merge: patch or minor.
         type: string
         required: false
         default: minor
@@ -43,38 +36,20 @@ on:
         type: boolean
         required: false
         default: false
-      security-only:
-        description: >-
-          Only auto-merge PRs that fix a Dependabot security alert. Requires
-          the alert-lookup-token secret.
-        type: boolean
-        required: false
-        default: false
       eligibility-label:
         description: >-
           Label recorded on PRs that pass the merge policy (and removed on
           re-evaluation from PRs that no longer do). The nightly
-          dependabot-automerge-sweep workflow merges by this label, so the
-          precise fetch-metadata classification made here carries over to
-          scheduled runs. Must match the sweep's eligibility-label.
+          dependabot-automerge-sweep workflow merges by this label. Must
+          match the sweep's eligibility-label.
         type: string
         required: false
         default: "automerge: eligible"
-    secrets:
-      alert-lookup-token:
-        description: >-
-          Token that can read Dependabot alerts (PAT or GitHub App
-          installation token). The default GITHUB_TOKEN cannot. When set,
-          PRs fixing an open alert auto-merge regardless of semver level.
-          Must be a Dependabot secret, not an Actions secret, because
-          Dependabot-triggered workflows read from the Dependabot secret
-          store.
-        required: false
 permissions:
   contents: write
   pull-requests: write
   # Creating the eligibility label and adding/removing it on PRs are
-  # Issues-API operations; without this the policy step 403s.
+  # Issues-API operations; without this the label steps 403.
   issues: write
 jobs:
   automerge:
@@ -83,104 +58,44 @@ jobs:
       github.event_name == 'pull_request' &&
       github.event.pull_request.user.login == 'dependabot[bot]'
     steps:
-      - name: Validate Inputs
-        env:
-          MERGE_METHOD: ${{ inputs.merge-method }}
-          TARGET: ${{ inputs.target }}
-          SECURITY_ONLY: ${{ inputs.security-only }}
-          HAS_ALERT_TOKEN: ${{ secrets.alert-lookup-token != '' }}
-          ELIGIBILITY_LABEL: ${{ inputs.eligibility-label }}
-        run: |
-          case "${MERGE_METHOD}" in
-            merge|squash|rebase) ;;
-            *) echo "invalid merge-method: ${MERGE_METHOD}" >&2; exit 1 ;;
-          esac
-          case "${TARGET}" in
-            patch|minor) ;;
-            *) echo "invalid target: ${TARGET}" >&2; exit 1 ;;
-          esac
-          if [ "${SECURITY_ONLY}" = "true" ] && [ "${HAS_ALERT_TOKEN}" != "true" ]; then
-            echo "security-only requires the alert-lookup-token secret" >&2
-            exit 1
-          fi
-          if [ -z "${ELIGIBILITY_LABEL}" ]; then
-            echo "eligibility-label must not be empty" >&2
-            exit 1
-          fi
       - name: Fetch Dependabot Metadata
         id: metadata
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
-        with:
-          alert-lookup: ${{ secrets.alert-lookup-token != '' }}
-          github-token: ${{ secrets.alert-lookup-token || secrets.GITHUB_TOKEN }}
-      # Decide the merge policy once, in one place, so the two merge steps
-      # can't drift and every outcome is logged. Emits eligible=true|false.
-      # Failing here (empty update-type) is a hard stop, distinct from an
-      # eligible=false decline: an unresolved metadata step must not read
-      # as "policy declined" and pass silently.
-      - name: Evaluate Merge Policy
-        id: policy
+      # The eligibility policy appears in the next three step guards; keep
+      # them identical (the second is the negation of the first).
+      - name: Label Eligible PR
+        if: >-
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+          (inputs.target == 'minor' &&
+           steps.metadata.outputs.update-type == 'version-update:semver-minor')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ALERT_STATE: ${{ steps.metadata.outputs.alert-state }}
-          UPDATE_TYPE: ${{ steps.metadata.outputs.update-type }}
-          TARGET: ${{ inputs.target }}
-          SECURITY_ONLY: ${{ inputs.security-only }}
           PR_URL: ${{ github.event.pull_request.html_url }}
           REPO: ${{ github.repository }}
-          ELIGIBILITY_LABEL: ${{ inputs.eligibility-label }}
-          DEFER: ${{ inputs.defer-to-sweep }}
+          LABEL: ${{ inputs.eligibility-label }}
         run: |
-          if [ -z "${UPDATE_TYPE}" ]; then
-            echo "metadata did not resolve an update-type; cannot decide" >&2
-            exit 1
-          fi
-          eligible=false
-          reason=""
-          if [ "${ALERT_STATE}" = "OPEN" ]; then
-            eligible=true
-            reason="fixes an open security alert"
-          elif [ "${SECURITY_ONLY}" = "true" ]; then
-            reason="security-only: PR does not fix an open alert"
-          elif [ "${UPDATE_TYPE}" = "version-update:semver-patch" ]; then
-            eligible=true
-            reason="patch update"
-          elif [ "${UPDATE_TYPE}" = "version-update:semver-minor" ] && [ "${TARGET}" = "minor" ]; then
-            eligible=true
-            reason="minor update within target"
-          else
-            reason="update-type ${UPDATE_TYPE} exceeds target ${TARGET}; leaving for manual review"
-          fi
-          echo "eligible=${eligible}" >>"${GITHUB_OUTPUT}"
-          echo "auto-merge eligible=${eligible}: ${reason}"
-          # Record the verdict on the PR as a label. This is what lets the
-          # nightly dependabot-automerge-sweep reuse this run's precise
-          # fetch-metadata classification instead of re-deriving it from PR
-          # titles at schedule time (where fetch-metadata cannot run). It
-          # also gives humans a veto: remove the label and the sweep skips
-          # the PR. Re-evaluation on every Dependabot push keeps it fresh.
-          if [ "${eligible}" = "true" ]; then
-            gh label create "${ELIGIBILITY_LABEL}" --repo "${REPO}" --force \
-              --description "Dependabot PR approved by policy for auto-merge" \
-              --color 2f7d63
-            gh pr edit "${PR_URL}" --add-label "${ELIGIBILITY_LABEL}"
-            if [ "${DEFER}" = "true" ]; then
-              echo "::notice title=Deferred to nightly sweep::${PR_URL} - labeled; the sweep merges once CI passes"
-            fi
-          else
-            # Best-effort: the label may not exist yet in this repo.
-            gh pr edit "${PR_URL}" --remove-label "${ELIGIBILITY_LABEL}" || true
-            echo "::notice title=Auto-merge declined::${PR_URL} - ${reason}"
-          fi
-      # No merge step runs when defer-to-sweep is set: the label applied
-      # above is the handoff, and the sweep merges once CI has finished.
-      # Nothing in this workflow ever waits on a runner for CI.
-      - name: Approve and Enable Auto-Merge
-        if: steps.policy.outputs.eligible == 'true' && !inputs.defer-to-sweep
+          gh label create "${LABEL}" --repo "${REPO}" --force --color 2f7d63 \
+            --description "Dependabot PR approved by policy for auto-merge"
+          gh pr edit "${PR_URL}" --add-label "${LABEL}"
+      - name: Remove Stale Label
+        if: >-
+          steps.metadata.outputs.update-type != 'version-update:semver-patch' &&
+          (inputs.target != 'minor' ||
+           steps.metadata.outputs.update-type != 'version-update:semver-minor')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-          MERGE_METHOD: ${{ inputs.merge-method }}
+          LABEL: ${{ inputs.eligibility-label }}
+        run: gh pr edit "${PR_URL}" --remove-label "${LABEL}" || true
+      - name: Enable Auto-Merge
+        if: >-
+          !inputs.defer-to-sweep &&
+          (steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+           (inputs.target == 'minor' &&
+            steps.metadata.outputs.update-type == 'version-update:semver-minor'))
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
           gh pr review --approve "${PR_URL}"
-          gh pr merge --auto "--${MERGE_METHOD}" "${PR_URL}"
+          gh pr merge --auto --squash "${PR_URL}"

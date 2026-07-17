@@ -1,14 +1,15 @@
-# Auto-merge Dependabot PRs that match a confidence policy: PRs fixing a
-# Dependabot security alert, plus routine patch/minor version bumps. Major
-# updates always wait for a human.
+# Auto-merge Dependabot PRs that match a confidence policy: routine
+# patch/minor version bumps. Major updates always wait for a human; adding
+# the "automerge: eligible" label by hand is the deliberate override.
+# Merges are always squash, per org git standards.
 #
 # This is a STARTER. Adopting it writes this file into the repository; it
 # does NOT configure repository settings. Read the prerequisites for the
-# gating strategy you pick (below and in workflow-templates/README.md in
+# strategy you pick (below and in workflow-templates/README.md in
 # bufbuild/.github) before relying on it.
 #
 # -----------------------------------------------------------------------
-# Pick ONE gating strategy
+# Pick ONE merge strategy
 # -----------------------------------------------------------------------
 # The two strategies differ only in HOW the merge waits for CI.
 #
@@ -70,17 +71,8 @@ jobs:
     #   # dependabot-automerge-sweep template too; leave omitted to use
     #   # GitHub native auto-merge (strategy A).
     #   defer-to-sweep: true
-    #   merge-method: squash # merge, squash, or rebase
-    #   target: minor        # highest non-security bump to auto-merge: patch or minor
-    #   security-only: false # only merge PRs that fix a security alert (needs alert-lookup-token)
+    #   target: minor # highest bump to auto-merge: patch or minor
     #   # Label recorded on eligible PRs. The optional nightly
     #   # dependabot-automerge-sweep merges by this label; if you override
     #   # it, override it there too.
     #   eligibility-label: "automerge: eligible"
-    # The alert-lookup-token secret lets PRs fixing an open security alert
-    # merge regardless of semver level, and MUST be a Dependabot secret
-    # (Settings -> Secrets and variables -> Dependabot), not an Actions
-    # secret, because Dependabot-triggered workflows read from the
-    # Dependabot secret store.
-    # secrets:
-    #   alert-lookup-token: ${{ secrets.DEPENDABOT_ALERT_LOOKUP_TOKEN }}

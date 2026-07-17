@@ -1,6 +1,7 @@
 # Nightly sweep that merges open Dependabot PRs already marked eligible by
 # the dependabot-automerge workflow. Major updates and anything else that
 # failed policy never carry the label, so they always wait for a human.
+# Merges are always squash, per org git standards.
 #
 # This is a STARTER. Adopting it writes this file into the repository; it
 # does NOT configure repository settings. Read the prerequisites below (and
@@ -13,8 +14,8 @@
 #
 #   dependabot-automerge (reactive)  — runs per Dependabot PR, classifies
 #     it precisely with dependabot/fetch-metadata (semver level, grouped
-#     updates, security alert state), and LABELS eligible PRs with
-#     "automerge: eligible". With defer-to-sweep: true it stops there.
+#     updates), and LABELS eligible PRs with "automerge: eligible". With
+#     defer-to-sweep: true it stops there.
 #   dependabot-automerge-sweep (this) — runs on a schedule, finds open
 #     Dependabot PRs carrying that label, and merges the ones whose CI is
 #     green (or that have no CI to wait on). It never classifies anything
@@ -28,9 +29,8 @@
 # labeled PR: checks all green -> merge; pending or failing -> skip, and
 # the next scheduled run retries. By sweep time CI has normally been
 # finished for hours, so merges are immediate. PRs on a repository with
-# no CI at all merge as-is (announced with a notice): such a repository
-# already accepts every change unverified, and the label already vetted
-# the update level.
+# no CI at all merge as-is: such a repository already accepts every
+# change unverified, and the label already vetted the update level.
 #
 # Humans can veto any PR by removing the label; the reactive workflow
 # re-evaluates (and re-labels or unlabels) on every Dependabot push.
@@ -50,17 +50,10 @@ permissions:
 jobs:
   sweep:
     uses: bufbuild/.github/.github/workflows/dependabot-automerge-sweep.yaml@main
-    # `with:` is OPTIONAL — every input has a default, so omit the whole
-    # block to accept them. To override any input, uncomment `with:` AND
-    # the specific line(s) below.
+    # `with:` is OPTIONAL — the input has a default, so omit the block to
+    # accept it. To override, uncomment `with:` AND the line below.
     # with:
-    #   merge-method: squash # merge, squash, or rebase
     #   # Label that marks PRs as merge-eligible. Only change this if the
     #   # reactive dependabot-automerge workflow uses the same override —
     #   # the two must match or the sweep finds nothing.
     #   eligibility-label: "automerge: eligible"
-    #   # Name of the reactive workflow (its caller stub's `name:`). The
-    #   # sweep ignores that workflow's check runs when deciding whether a
-    #   # PR has real CI. Only change this if you renamed the reactive
-    #   # workflow.
-    #   automerge-workflow: dependabot-automerge
