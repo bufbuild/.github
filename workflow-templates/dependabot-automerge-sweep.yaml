@@ -42,7 +42,7 @@ name: dependabot-automerge-sweep
 # after 60 days of repository inactivity.
 on:
   schedule:
-    - cron: "0 7 * * *" # 07:00 UTC daily; adjust to taste
+    - cron: "0 14 * * 1-5" # 14:00 UTC weekdays (9am EST / 10am EDT); adjust to taste
   workflow_dispatch: # allow manual runs from the Actions tab
 permissions:
   contents: write
