@@ -1,5 +1,0 @@
-{
-  "name": "Dependabot Auto-Merge (Nightly Sweep)",
-  "description": "Scheduled pass that merges open Dependabot PRs already labeled eligible by the Dependabot Auto-Merge workflow. Requires that workflow to be installed too; the sweep never classifies PRs itself.",
-  "categories": ["Automation"]
-}

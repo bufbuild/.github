@@ -1,101 +1,107 @@
-# Reusable workflow that enables GitHub native auto-merge on Dependabot PRs
-# matching a confidence policy: routine patch/minor version bumps. Major
-# updates always wait for a human; adding the eligibility label by hand is
-# the deliberate override. Merges are always squash, per org git standards.
+# Auto-merge for Dependabot PRs. Patch/minor updates are labeled
+# "automerge: eligible" as they arrive, then merged; majors never qualify
+# and wait for a human. Adding the label by hand arms a PR for the next
+# sweep; removing it vetoes one.
 #
-# Two merge strategies, selected by defer-to-sweep:
-#   false (default): GitHub native auto-merge (`gh pr merge --auto`). Free,
-#     but only waits for CI if the default branch has required status
-#     checks. Without them it merges immediately — so this strategy
-#     REQUIRES required status checks.
-#   true: no merge here at all. Eligible PRs are only labeled; the
-#     scheduled dependabot-automerge-sweep workflow merges them once CI
-#     has finished. Use on repositories with no required status checks.
-# Eligible PRs are always labeled (eligibility-label) so the sweep can
-# merge them without re-deriving the classification, which is impossible
-# at schedule time. See workflow-templates/README.md for adoption
-# prerequisites.
+# mode: auto (default) arms GitHub native auto-merge on eligible PRs and
+# needs branch protection with required status checks plus "Allow
+# auto-merge".
+#
+# WARNING: WITHOUT REQUIRED CHECKS, AUTO MODE MERGES IMMEDIATELY
+#
+# mode: scheduled leaves merging to the sweep job, which merges labeled
+# PRs once their checks are green. Works on any repository.
 name: dependabot-automerge
 on:
   workflow_call:
     inputs:
-      target:
-        description: >-
-          Highest semver update type to auto-merge: patch or minor.
+      mode:
         type: string
         required: false
-        default: minor
-      defer-to-sweep:
-        description: >-
-          Do not merge here; only label eligible PRs and let the scheduled
-          dependabot-automerge-sweep workflow merge them once CI has
-          finished. Use on repositories whose default branch has no
-          required status checks (where native auto-merge would merge
-          immediately). Requires the sweep workflow to be installed, or
-          labeled PRs will never merge.
-        type: boolean
-        required: false
-        default: false
-      eligibility-label:
-        description: >-
-          Label recorded on PRs that pass the merge policy (and removed on
-          re-evaluation from PRs that no longer do). The nightly
-          dependabot-automerge-sweep workflow merges by this label. Must
-          match the sweep's eligibility-label.
-        type: string
-        required: false
-        default: "automerge: eligible"
+        default: auto
 permissions:
   contents: write
   pull-requests: write
-  # Creating the eligibility label and adding/removing it on PRs are
-  # Issues-API operations; without this the label steps 403.
   issues: write
 jobs:
-  automerge:
+  # Classifies each Dependabot PR with fetch-metadata and records the
+  # verdict as the label. Re-runs on every Dependabot push, so a PR that
+  # stops qualifying (e.g. a grouped update gains a major member) loses
+  # its label.
+  mark:
     runs-on: ubuntu-latest
     if: >-
       github.event_name == 'pull_request' &&
-      github.event.pull_request.user.login == 'dependabot[bot]'
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.actor == 'dependabot[bot]'
     steps:
       - name: Fetch Dependabot Metadata
         id: metadata
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
-      # The eligibility policy appears in the next three step guards; keep
-      # them identical (the second is the negation of the first).
       - name: Label Eligible PR
+        id: label
         if: >-
           steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
-          (inputs.target == 'minor' &&
-           steps.metadata.outputs.update-type == 'version-update:semver-minor')
+          steps.metadata.outputs.update-type == 'version-update:semver-minor'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
           REPO: ${{ github.repository }}
-          LABEL: ${{ inputs.eligibility-label }}
         run: |
-          gh label create "${LABEL}" --repo "${REPO}" --force --color 2f7d63 \
-            --description "Dependabot PR approved by policy for auto-merge"
-          gh pr edit "${PR_URL}" --add-label "${LABEL}"
+          gh label create "automerge: eligible" --repo "${REPO}" --force
+          gh pr edit "${PR_URL}" --add-label "automerge: eligible"
       - name: Remove Stale Label
         if: >-
           steps.metadata.outputs.update-type != 'version-update:semver-patch' &&
-          (inputs.target != 'minor' ||
-           steps.metadata.outputs.update-type != 'version-update:semver-minor')
+          steps.metadata.outputs.update-type != 'version-update:semver-minor'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-          LABEL: ${{ inputs.eligibility-label }}
-        run: gh pr edit "${PR_URL}" --remove-label "${LABEL}" || true
+        run: |
+          gh pr edit "${PR_URL}" --remove-label "automerge: eligible" || true
       - name: Enable Auto-Merge
-        if: >-
-          !inputs.defer-to-sweep &&
-          (steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
-           (inputs.target == 'minor' &&
-            steps.metadata.outputs.update-type == 'version-update:semver-minor'))
+        if: inputs.mode == 'auto' && steps.label.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
           gh pr review --approve "${PR_URL}"
           gh pr merge --auto --squash "${PR_URL}"
+  # Merges open labeled Dependabot PRs whose checks are green, one look
+  # per PR, no waiting. The triggers that wake it (workflow_run, schedule,
+  # workflow_dispatch) live in the caller stub.
+  sweep:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       startsWith(github.event.workflow_run.head_branch, 'dependabot/'))
+    concurrency:
+      group: dependabot-automerge-sweep
+      cancel-in-progress: false
+    steps:
+      - name: Merge Labeled Dependabot PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh pr list --repo "${REPO}" --author 'app/dependabot' \
+            --label "automerge: eligible" --state open --limit 100 --json url \
+            --jq '.[].url' |
+          while read -r url; do
+            # `gh pr checks` errors when a PR has no checks; that counts
+            # as zero blockers and merges — a repository without CI
+            # already accepts every change unverified.
+            blocked=$(gh pr checks "${url}" --json bucket \
+              --jq '[.[] | select(.bucket == "fail" or .bucket == "cancel" or .bucket == "pending")] | length' \
+              2>/dev/null) || true
+            if [ "${blocked:-0}" -eq 0 ]; then
+              gh pr review --approve "${url}" &&
+                gh pr merge --squash "${url}" ||
+                echo "failed to merge ${url}" >&2
+            else
+              echo "skipping ${url}: ${blocked} check(s) not green"
+            fi
+          done

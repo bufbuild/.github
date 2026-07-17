@@ -1,5 +1,0 @@
-{
-  "name": "Dependabot Auto-Merge",
-  "description": "Auto-merge (always squash) Dependabot patch/minor PRs. Merges via GitHub native auto-merge on repos with required checks, or labels PRs for the nightly sweep (defer-to-sweep) on repos without. Majors wait for a human.",
-  "categories": ["Automation"]
-}
