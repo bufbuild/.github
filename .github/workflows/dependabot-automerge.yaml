@@ -7,17 +7,13 @@
 # eligible PRs; else, a sweep job merges PRs periodically after checks are green.
 #
 # WARNING: only use github-auto-merge on repos with required status checks.
+# Setting github-auto-merge on a repo without required checks will result in
+# PRs merging immediately without waiting for CI (probably not what you want).
 name: dependabot-automerge
 on:
   workflow_call:
     inputs:
       github-auto-merge:
-        description: >-
-          Arm GitHub native auto-merge on eligible PRs.
-          Only set this to true if the repository allows auto-merge and
-          has branch protection with required status checks configured;
-          without required checks, GitHub auto-merge merges immediately
-          without waiting for any checks to complete, which is not what you want.
         type: boolean
         required: true
 permissions:
