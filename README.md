@@ -2,8 +2,9 @@
 
 One workflow, two jobs. **mark** classifies every Dependabot PR the moment
 it opens and records the verdict as a label; **sweep** merges labeled PRs
-once CI is done. A single `mode` input picks who merges: GitHub native
-auto-merge (`auto`, the default) or the sweep (`scheduled`).
+once CI is done. A single required boolean input, `github-auto-merge`,
+picks who merges: GitHub native auto-merge (`true`) or the sweep
+(`false`).
 
 ## Architecture
 
@@ -12,8 +13,8 @@ flowchart TD
     PR[Dependabot PR opens or updates] --> mark["mark: classify with fetch-metadata"]
     mark -->|patch / minor| label["label: automerge: eligible"]
     mark -->|major| human[no label - waits for a human]
-    label -->|mode: auto| arm["arm native auto-merge - GitHub merges when required checks pass"]
-    label -->|mode: scheduled| done[done - exit in seconds]
+    label -->|github-auto-merge: true| arm["arm native auto-merge - GitHub merges when required checks pass"]
+    label -->|github-auto-merge: false| done[done - exit in seconds]
     ci["CI completes on a dependabot/** branch"] --> sweep
     cron[cron backstop / manual dispatch] --> sweep
     sweep["sweep: one look per labeled PR"] -->|green, or no CI at all| merge[squash-merge]
@@ -34,6 +35,8 @@ permissions:
 jobs:
   automerge:
     uses: bufbuild/.github/.github/workflows/dependabot-automerge.yaml@main
+    with:
+      github-auto-merge: true
 ```
 
 For repositories **without** required status checks:
@@ -57,7 +60,7 @@ jobs:
   automerge:
     uses: bufbuild/.github/.github/workflows/dependabot-automerge.yaml@main
     with:
-      mode: scheduled
+      github-auto-merge: false
 ```
 
 `workflows` is a list of your CI workflows, matched by their `name:` —
@@ -77,10 +80,12 @@ author and its most recent pusher. Classifies the update with
 [dependabot/fetch-metadata](https://github.com/dependabot/fetch-metadata)
 — precise semver level, including every member of a grouped update.
 Patch/minor gets the `automerge: eligible` label; anything else has the
-label removed if present, so a grouped PR that gains a major member on
-update loses its mark. With `mode: auto` it also approves and arms GitHub native
+label removed and any previously armed auto-merge disarmed, so a grouped
+PR that gains a major member on update loses its mark and will not merge.
+With `github-auto-merge: true` it also approves and arms GitHub native
 auto-merge (`gh pr merge --auto --squash`); GitHub merges once required
-status checks pass. With `mode: scheduled` it stops at the label.
+status checks pass. With `github-auto-merge: false` it stops at the
+label.
 
 **sweep** (`workflow_run` / `schedule` / `workflow_dispatch`) — lists
 open Dependabot-authored PRs carrying the label and takes one look at
@@ -103,22 +108,23 @@ one running sweep and one queued.
 | Any check failed/cancelled | Skip — retry next wake |
 | No label | Never considered |
 
-## Choosing a mode
+## Choosing a value for `github-auto-merge`
 
-| Repository | Mode | Merge timing |
+| Repository | `github-auto-merge` | Merge timing |
 |---|---|---|
-| Required status checks configured | `auto` (default — omit `with:`) | Same-hour: GitHub merges when checks pass |
-| No required checks | `mode: scheduled` | At the next sweep wake after CI passes — usually minutes, via `workflow_run` |
-| No CI at all | `mode: scheduled` | Next cron tick; merges ungated, by explicit choice |
+| Required status checks configured | `true` | Same-hour: GitHub merges when checks pass |
+| No required checks | `false` | At the next sweep wake after CI passes — usually minutes, via `workflow_run` |
+| No CI at all | `false` | Next cron tick; merges ungated, by explicit choice |
 
-The two modes gate differently: `scheduled` waits on **all** of a PR's
-checks; `auto` waits only on **required** ones.
+The two settings gate differently: `false` (the sweep) waits on **all**
+of a PR's checks; `true` waits only on **required** ones.
 
 Some rulesets don't count bot approvals toward required reviews — if a
 review-requiring repository stalls at "Review required" despite the
 workflow's approval, that's why.
 
 > [!WARNING]
-> `auto` on a repository without required checks merges eligible PRs
-> immediately — the default assumes the branch-protection setup
-> ("required status checks" + "Allow auto-merge") is done first.
+> `github-auto-merge: true` on a repository without required checks
+> merges eligible PRs immediately, without waiting for any checks. Only
+> set it to `true` once the branch-protection setup ("required status
+> checks" + "Allow auto-merge") is done.
