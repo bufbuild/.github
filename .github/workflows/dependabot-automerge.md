@@ -1,25 +1,8 @@
 # Dependabot Auto-Merge
 
-One workflow, two jobs. **mark** classifies every Dependabot PR the moment
-it opens and records the verdict as a label; **sweep** merges labeled PRs
-once CI is done. A single required boolean input, `github-auto-merge`,
-picks who merges: GitHub native auto-merge (`true`) or the sweep
-(`false`).
+This GitHub workflow automatically merges Dependabot PRs for patch and minor updates that pass CI.
 
-## Architecture
-
-```mermaid
-flowchart TD
-    PR[Dependabot PR opens or updates] --> mark["mark: classify with fetch-metadata"]
-    mark -->|patch / minor| label["label: automerge: eligible"]
-    mark -->|major| human[no label - waits for a human]
-    label -->|github-auto-merge: true| arm["arm native auto-merge - GitHub merges when required checks pass"]
-    label -->|github-auto-merge: false| done[done - exit in seconds]
-    ci["CI completes on a dependabot/** branch"] --> sweep
-    cron[cron backstop / manual dispatch] --> sweep
-    sweep["sweep: one look per labeled PR"] -->|green, or no CI at all| merge[squash-merge]
-    sweep -->|pending or failing| retry[skip - retry next wake]
-```
+## Usage
 
 Copy one of these into `.github/workflows/dependabot-automerge.yaml`.
 
@@ -68,12 +51,24 @@ the checks that must complete before it's considered safe to auto-merge.
 A name that matches nothing is a silently dead trigger; the cron backstop
 still works.
 
+## Architecture
+
+```mermaid
+flowchart TD
+    PR[Dependabot PR opens or updates] --> mark["mark: classify with fetch-metadata"]
+    mark -->|patch / minor| label["label: automerge: eligible"]
+    mark -->|major| human[no label - waits for a human]
+    label -->|github-auto-merge: true| arm["arm native auto-merge - GitHub merges when required checks pass"]
+    label -->|github-auto-merge: false| done[done - exit in seconds]
+    ci["CI completes on a dependabot/** branch"] --> sweep
+    cron[cron backstop / manual dispatch] --> sweep
+    sweep["sweep: one look per labeled PR"] -->|green, or no CI at all| merge[squash-merge]
+    sweep -->|pending or failing| retry[skip - retry next wake]
+```
+
 ## The two jobs
 
-The reusable workflow the snippet calls contains both jobs. Each run
-executes the one matching its trigger — a `pull_request` event runs
-**mark**, the other triggers run **sweep** — which is why one copied file
-covers both halves.
+This workflow contains two jobs.
 
 **mark** (`pull_request`) — runs only when Dependabot is both the PR's
 author and its most recent pusher. Classifies the update with
