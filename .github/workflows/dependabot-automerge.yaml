@@ -3,22 +3,23 @@
 # and wait for a human. Adding the label by hand arms a PR for the next
 # sweep; removing it vetoes one.
 #
-# mode: auto (default) arms GitHub native auto-merge on eligible PRs and
-# needs branch protection with required status checks plus "Allow
-# auto-merge".
+# If github-auto-merge is true, GitHub native auto-merge is armed on
+# eligible PRs; else, a sweep job merges PRs periodically after checks are green.
 #
-# WARNING: WITHOUT REQUIRED CHECKS, AUTO MODE MERGES IMMEDIATELY
-#
-# mode: scheduled leaves merging to the sweep job, which merges labeled
-# PRs once their checks are green. Works on any repository.
+# WARNING: only use github-auto-merge on repos with required status checks.
 name: dependabot-automerge
 on:
   workflow_call:
     inputs:
-      mode:
-        type: string
-        required: false
-        default: auto
+      github-auto-merge:
+        description: >-
+          Arm GitHub native auto-merge on eligible PRs.
+          Only set this to true if the repository allows auto-merge and
+          has branch protection with required status checks configured;
+          without required checks, GitHub auto-merge merges immediately
+          without waiting for any checks to complete, which is not what you want.
+        type: boolean
+        required: true
 permissions:
   contents: write
   pull-requests: write
@@ -61,7 +62,7 @@ jobs:
           gh pr edit "${PR_URL}" --remove-label "automerge: eligible" || true
           gh pr merge --disable-auto "${PR_URL}" || true
       - name: Enable Auto-Merge
-        if: inputs.mode == 'auto' && steps.label.outcome == 'success'
+        if: inputs.github-auto-merge && steps.label.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
