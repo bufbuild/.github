@@ -27,7 +27,7 @@ jobs:
   # Classifies each Dependabot PR with fetch-metadata and records the
   # verdict as the label. Re-runs on every Dependabot push, so a PR that
   # stops qualifying (e.g. a grouped update gains a major member) loses
-  # its label.
+  # its label and any previously armed auto-merge.
   mark:
     runs-on: ubuntu-latest
     if: >-
@@ -59,6 +59,7 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
           gh pr edit "${PR_URL}" --remove-label "automerge: eligible" || true
+          gh pr merge --disable-auto "${PR_URL}" || true
       - name: Enable Auto-Merge
         if: inputs.mode == 'auto' && steps.label.outcome == 'success'
         env:
